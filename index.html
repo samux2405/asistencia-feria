@@ -1,0 +1,1124 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:,">
+<title>Control de Asistencia</title>
+<style>
+:root {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --ink: #14181f;
+  --muted: #5a6371;
+  --line: #e1e4ea;
+  --accent: #1a4fd6;
+  --accent-ink: #ffffff;
+  --ok: #14693f;   --ok-bg: #def3e8;
+  --warn: #7d5200; --warn-bg: #fcefcc;
+  --bad: #a3231b;  --bad-bg: #fae1de;
+  --info: #17549b; --info-bg: #dfecf9;
+  --c-ok: #2e9e68; --c-warn: #e0a21b; --c-bad: #d9534f; --c-info: #4d8fd6;
+  --radius: 10px;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1218;
+    --surface: #181c25;
+    --ink: #e8ebf1;
+    --muted: #9aa3b2;
+    --line: #2a303c;
+    --accent: #6b93ff;
+    --accent-ink: #0b1020;
+    --ok: #6fd3a0;   --ok-bg: #12301f;
+    --warn: #f0c761; --warn-bg: #3a2c08;
+    --bad: #ff8f88;  --bad-bg: #3d1714;
+    --info: #86b8f2; --info-bg: #14283f;
+    --c-ok: #3fb97c; --c-warn: #e6ae2c; --c-bad: #e8625d; --c-info: #5b9be0;
+  }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.5 var(--font);
+}
+[hidden] { display: none !important; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- login ---------- */
+.login-wrap { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
+.login {
+  width: 100%; max-width: 380px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 32px 28px 28px;
+}
+.login h1 { margin: 0 0 4px; font-size: 22px; letter-spacing: -0.01em; }
+.login p.sub { margin: 0 0 24px; color: var(--muted); font-size: 14px; }
+.campo { display: block; margin-bottom: 16px; }
+.campo span { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; }
+.campo input, .campo select, .filtros input, .filtros select {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.campo input:focus, .campo select:focus, .filtros input:focus, .filtros select:focus {
+  border-color: var(--accent);
+}
+.btn {
+  appearance: none;
+  border: 1px solid transparent;
+  background: var(--accent);
+  color: var(--accent-ink);
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn:disabled { opacity: .6; cursor: progress; }
+.btn.block { width: 100%; padding: 12px; }
+.btn.sec { background: transparent; color: var(--ink); border-color: var(--line); }
+.btn.sec:hover { border-color: var(--muted); }
+.btn.peq { padding: 4px 12px; font-size: 13px; }
+.btn.peligro { background: transparent; color: var(--bad); border-color: var(--bad); }
+.error { min-height: 1.4em; margin: 12px 0 0; color: var(--bad); font-size: 14px; }
+.nota-login { margin: 18px 0 0; color: var(--muted); font-size: 12.5px; }
+
+/* ---------- app ---------- */
+header.top { position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+.top-in { max-width: 1120px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.top-in h1 { margin: 0; font-size: 17px; letter-spacing: -0.01em; }
+.top-in .quien { margin-left: auto; font-size: 13px; color: var(--muted); }
+.top-in .quien small { display: block; font-size: 12px; text-align: right; }
+nav.tabs { max-width: 1120px; margin: 0 auto; padding: 0 16px; display: flex; gap: 4px; overflow-x: auto; }
+nav.tabs button {
+  appearance: none; background: none; border: 0;
+  padding: 10px 14px; color: var(--muted); font-weight: 600; cursor: pointer;
+  border-bottom: 3px solid transparent; white-space: nowrap;
+}
+nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+main { max-width: 1120px; margin: 0 auto; padding: 20px 16px 48px; }
+
+h2 { margin: 0 0 14px; font-size: 18px; letter-spacing: -0.01em; }
+h3 { margin: 28px 0 10px; font-size: 15px; }
+.bloque { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+.fila-titulo { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.fila-titulo h2 { margin: 0; }
+
+.cifras { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 8px; }
+.cifra { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+.cifra b { display: block; font-size: 30px; line-height: 1.1; letter-spacing: -0.02em; }
+.cifra small { color: var(--muted); font-size: 13px; }
+.cifra.ok b { color: var(--ok); }
+.cifra.warn b { color: var(--warn); }
+.cifra.bad b { color: var(--bad); }
+.cifra.info b { color: var(--info); }
+
+.filtros { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 14px; align-items: end; }
+.filtros label span { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 4px; color: var(--muted); }
+.filtros .acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+.form-licencia { margin-bottom: 18px; }
+.form-licencia .filtros { margin-bottom: 0; }
+
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 10px 14px; text-align: left; white-space: nowrap; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); background: var(--bg); border-bottom: 1px solid var(--line); }
+td { border-bottom: 1px solid var(--line); }
+tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+td.mono { font-variant-numeric: tabular-nums; }
+.vacio { padding: 28px 16px; text-align: center; color: var(--muted); }
+
+.badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; letter-spacing: .02em; }
+.badge.PRESENTE, .badge.ok { background: var(--ok-bg); color: var(--ok); }
+.badge.TARDANZA, .badge.warn { background: var(--warn-bg); color: var(--warn); }
+.badge.AUSENTE, .badge.bad { background: var(--bad-bg); color: var(--bad); }
+.badge.LICENCIA, .badge.info { background: var(--info-bg); color: var(--info); }
+.badge.neutro { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+
+.grafico { padding: 14px 12px 6px; }
+.grafico svg { width: 100%; height: auto; display: block; }
+.leyenda { display: flex; gap: 16px; flex-wrap: wrap; padding: 4px 6px 8px; font-size: 13px; color: var(--muted); }
+.leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; }
+
+.pie { margin-top: 28px; color: var(--muted); font-size: 12.5px; }
+.aviso { margin: 0 0 14px; padding: 10px 14px; background: var(--info-bg); color: var(--info); border-radius: 8px; font-size: 13.5px; }
+
+dialog {
+  width: min(420px, calc(100vw - 32px));
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 14px;
+  padding: 24px;
+}
+dialog::backdrop { background: rgba(10, 14, 22, .55); }
+dialog h3 { margin: 0 0 4px; }
+dialog .sub { margin: 0 0 18px; color: var(--muted); font-size: 14px; }
+.acciones-dlg { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 8px; }
+
+#toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+  max-width: calc(100vw - 32px);
+  padding: 10px 18px; border-radius: 10px; font-size: 14px; font-weight: 600;
+  background: var(--ok-bg); color: var(--ok); border: 1px solid var(--ok);
+  z-index: 20;
+}
+#toast.mal { background: var(--bad-bg); color: var(--bad); border-color: var(--bad); }
+
+@media (max-width: 560px) {
+  .cifra b { font-size: 26px; }
+  th, td { padding: 9px 10px; }
+  .top-in .quien { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div class="login-wrap" id="vistaLogin">
+  <form class="login" id="formLogin" autocomplete="on">
+    <h1>Control de Asistencia</h1>
+    <p class="sub">Acceso para administradores</p>
+
+    <label class="campo">
+      <span>Correo del administrador</span>
+      <input id="usuario" name="username" type="email" autocomplete="username"
+             autocapitalize="none" spellcheck="false" required>
+    </label>
+
+    <label class="campo">
+      <span>Contraseña</span>
+      <input id="clave" name="password" type="password"
+             autocomplete="current-password" required>
+    </label>
+
+    <button class="btn block" id="btnEntrar" type="submit">Entrar</button>
+    <p class="error" id="errorLogin" role="alert" aria-live="polite"></p>
+    <p class="nota-login">Solo pueden entrar las cuentas de administrador autorizadas.</p>
+  </form>
+</div>
+
+<!-- ============ APLICACION ============ -->
+<div id="vistaApp" hidden>
+  <header class="top">
+    <div class="top-in">
+      <h1>Control de Asistencia</h1>
+      <button class="btn sec peq" id="btnActualizar" type="button">Actualizar</button>
+      <span class="quien">
+        Administrador: <strong id="nombreAdmin"></strong>
+        <small id="horaActualizado"></small>
+      </span>
+      <button class="btn sec" id="btnSalir" type="button">Salir</button>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Secciones">
+      <button role="tab" aria-selected="true"  data-tab="resumen">Resumen</button>
+      <button role="tab" aria-selected="false" data-tab="asistencia">Asistencia</button>
+      <button role="tab" aria-selected="false" data-tab="estudiantes">Estudiantes</button>
+      <button role="tab" aria-selected="false" data-tab="licencias">Licencias</button>
+      <button role="tab" aria-selected="false" data-tab="eventos">Alertas</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- RESUMEN -->
+    <section id="tab-resumen" role="tabpanel">
+      <div class="fila-titulo">
+        <h2>Resumen del día</h2>
+        <div class="filtros" style="margin:0; min-width:200px;">
+          <label><span>Fecha</span><select id="selDia"></select></label>
+        </div>
+      </div>
+      <div class="cifras" id="cifras"></div>
+
+      <h3>Por curso</h3>
+      <div id="porCurso"></div>
+
+      <h3>Últimos días con clase</h3>
+      <div class="bloque grafico" id="grafico"></div>
+    </section>
+
+    <!-- ASISTENCIA -->
+    <section id="tab-asistencia" role="tabpanel" hidden>
+      <div class="fila-titulo"><h2>Registro de asistencia</h2></div>
+      <div class="filtros">
+        <label><span>Desde</span><input type="date" id="fDesde"></label>
+        <label><span>Hasta</span><input type="date" id="fHasta"></label>
+        <label><span>Curso</span><select id="fCurso"></select></label>
+        <label><span>Estado</span>
+          <select id="fEstado">
+            <option value="">Todos</option>
+            <option>PRESENTE</option>
+            <option>TARDANZA</option>
+            <option>AUSENTE</option>
+            <option>LICENCIA</option>
+          </select>
+        </label>
+        <label><span>Buscar nombre</span><input type="search" id="fBuscar" placeholder="Ej. Valeria"></label>
+        <div class="acciones">
+          <button class="btn sec" id="btnTodo" type="button">Todo el historial</button>
+          <button class="btn" id="btnCsv" type="button">Descargar CSV</button>
+        </div>
+      </div>
+      <div id="resultadoAsistencia"></div>
+    </section>
+
+    <!-- ESTUDIANTES -->
+    <section id="tab-estudiantes" role="tabpanel" hidden>
+      <div class="fila-titulo"><h2>Estudiantes</h2></div>
+      <p class="aviso">Los estudiantes se registran, se activan y se desactivan desde la computadora del sistema de reconocimiento.</p>
+      <div class="filtros">
+        <label><span>Curso</span><select id="eCurso"></select></label>
+        <label><span>Buscar nombre</span><input type="search" id="eBuscar"></label>
+      </div>
+      <div id="resultadoEstudiantes"></div>
+    </section>
+
+    <!-- LICENCIAS -->
+    <section id="tab-licencias" role="tabpanel" hidden>
+      <div class="fila-titulo"><h2>Licencias</h2></div>
+      <form class="bloque form-licencia" id="formLicencia">
+        <div class="filtros">
+          <label><span>Estudiante</span><select id="lEst" required></select></label>
+          <label><span>Desde</span><input type="date" id="lDesde" required></label>
+          <label><span>Hasta</span><input type="date" id="lHasta" required></label>
+          <label><span>Motivo</span><input type="text" id="lMotivo" maxlength="120" placeholder="Ej. Cita médica"></label>
+          <div class="acciones"><button class="btn" id="btnLicencia" type="submit">Registrar licencia</button></div>
+        </div>
+        <p class="error" id="lError" role="alert"></p>
+      </form>
+      <div id="resultadoLicencias"></div>
+    </section>
+
+    <!-- EVENTOS -->
+    <section id="tab-eventos" role="tabpanel" hidden>
+      <div class="fila-titulo"><h2>Alertas del sistema</h2></div>
+      <p class="aviso">Intentos que el sistema no registró: personas no registradas, posibles fotos o identidades que no se pudieron confirmar.</p>
+      <div id="resultadoEventos"></div>
+    </section>
+
+    <p class="pie" id="pie"></p>
+  </main>
+</div>
+
+<!-- ============ EDITAR / MARCAR ASISTENCIA ============ -->
+<dialog id="dlgAsistencia">
+  <form id="formAsistencia">
+    <h3 id="dlgTitulo"></h3>
+    <p class="sub" id="dlgDetalle"></p>
+    <label class="campo">
+      <span>Hora de entrada</span>
+      <input type="time" step="1" id="dHora" required>
+    </label>
+    <label class="campo">
+      <span>Estado</span>
+      <select id="dEstado"><option>PRESENTE</option><option>TARDANZA</option></select>
+    </label>
+    <p class="error" id="dError" role="alert"></p>
+    <div class="acciones-dlg">
+      <button type="button" class="btn sec" id="dCancelar">Cancelar</button>
+      <button type="button" class="btn peligro" id="dEliminar" hidden>Eliminar registro</button>
+      <button type="submit" class="btn" id="dGuardar">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="config.js"></script>
+<script>
+"use strict";
+
+/* =========================================================
+   UTILIDADES
+   ========================================================= */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+const DIAS_SEMANA = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+const p2 = n => String(n).padStart(2, "0");
+
+function fechaLocal(iso) {
+  const [a, m, d] = iso.split("-").map(Number);
+  return new Date(a, m - 1, d);
+}
+function fmtFecha(iso) {
+  if (!iso) return "";
+  const [a, m, d] = iso.split("-");
+  return `${d}/${m}/${a}`;
+}
+function fmtFechaLarga(iso) {
+  return `${DIAS_SEMANA[fechaLocal(iso).getDay()]} ${fmtFecha(iso)}`;
+}
+function hoyISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
+}
+function horaCompleta(h) {          // "07:50" -> "07:50:00"
+  if (!h) return "";
+  return h.length === 5 ? h + ":00" : h.slice(0, 8);
+}
+const badge = estado => `<span class="badge ${esc(estado)}">${esc(estado)}</span>`;
+
+const NOMBRE_EVENTO = {
+  no_registrado: "Persona no registrada",
+  ambiguo: "No se pudo identificar",
+  vivacidad_fallida: "Posible foto (verificación fallida)",
+  identidad_cambio: "Identidad no confirmada",
+  verificacion_cancelada: "Verificación cancelada",
+};
+
+let temporizadorToast = null;
+function toast(texto, bien = true) {
+  const t = $("#toast");
+  t.textContent = texto;
+  t.className = bien ? "" : "mal";
+  t.hidden = false;
+  clearTimeout(temporizadorToast);
+  temporizadorToast = setTimeout(() => { t.hidden = true; }, 4000);
+}
+
+/* =========================================================
+   CONEXION CON SUPABASE (sin librerias externas)
+   ========================================================= */
+const CFG = window.CONFIG || {};
+const URL_API = String(CFG.SUPABASE_URL || "").replace(/\/$/, "");
+const CLAVE = CFG.SUPABASE_KEY || "";
+const HORA_LIMITE = CFG.HORA_LIMITE || "08:00:00";
+
+class ErrorApi extends Error {
+  constructor(codigo, texto) { super(texto); this.codigo = codigo; }
+}
+
+const Sesion = { token: null, refresh: null, expira: 0 };
+let refrescando = null;
+
+function guardarSesion(r) {
+  Sesion.token = r.access_token;
+  Sesion.refresh = r.refresh_token;
+  Sesion.expira = Date.now() + (Number(r.expires_in) || 3600) * 1000;
+}
+
+async function http(metodo, ruta, cuerpo, extra = {}, conToken = true) {
+  const cab = { apikey: CLAVE, "Content-Type": "application/json", ...extra };
+  if (conToken) cab.Authorization = "Bearer " + await tokenValido();
+
+  let r;
+  try {
+    r = await fetch(URL_API + ruta, {
+      method: metodo,
+      headers: cab,
+      body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
+    });
+  } catch (e) {
+    throw new ErrorApi(0, "Sin conexión con el servidor.");
+  }
+
+  const texto = await r.text();
+  if (!r.ok) throw new ErrorApi(r.status, texto);
+  return texto ? JSON.parse(texto) : null;
+}
+
+async function tokenValido() {
+  if (Sesion.token && Date.now() < Sesion.expira - 60000) return Sesion.token;
+  if (!Sesion.refresh) throw new ErrorApi(401, "Sesión vencida");
+
+  if (!refrescando) {
+    refrescando = (async () => {
+      try {
+        const r = await http("POST", "/auth/v1/token?grant_type=refresh_token",
+          { refresh_token: Sesion.refresh }, {}, false);
+        guardarSesion(r);
+      } finally { refrescando = null; }
+    })();
+  }
+  await refrescando;
+  return Sesion.token;
+}
+
+async function todo(tabla, consulta) {
+  const filas = [], paso = 1000;
+  for (let desde = 0; ; desde += paso) {
+    const lote = await http("GET",
+      `/rest/v1/${tabla}?${consulta}&limit=${paso}&offset=${desde}`);
+    filas.push(...lote);
+    if (lote.length < paso) break;
+  }
+  return filas;
+}
+
+function textoError(e) {
+  if (!(e instanceof ErrorApi)) return "Ocurrió un error inesperado.";
+  if (e.codigo === -1) return e.message;
+  if (e.codigo === 0) return e.message;
+  if (e.codigo === 401) return "Tu sesión venció. Vuelve a entrar.";
+  if (e.codigo === 403) return "No tienes permiso para hacer eso.";
+  try {
+    const j = JSON.parse(e.message);
+    return j.message || j.msg || j.error_description || "Error del servidor.";
+  } catch { return "Error del servidor."; }
+}
+
+async function iniciarSesionNube(correo, clave) {
+  try {
+    const r = await http("POST", "/auth/v1/token?grant_type=password",
+      { email: correo.trim(), password: clave }, {}, false);
+    guardarSesion(r);
+  } catch (e) {
+    if (e instanceof ErrorApi && (e.codigo === 400 || e.codigo === 401 || e.codigo === 422)) {
+      throw new ErrorApi(-1, "Correo o contraseña incorrectos.");
+    }
+    throw e;
+  }
+
+  const filas = await http("GET", "/rest/v1/administradores?select=rol,nombre");
+  const fila = filas && filas[0];
+  if (!fila || fila.rol !== "admin") {
+    cerrarSesionNube();
+    throw new ErrorApi(-1, "Esta cuenta no tiene permiso de administrador.");
+  }
+  return fila;
+}
+
+function cerrarSesionNube() {
+  const token = Sesion.token;
+  Sesion.token = Sesion.refresh = null;
+  Sesion.expira = 0;
+  if (token) {
+    fetch(URL_API + "/auth/v1/logout", {
+      method: "POST",
+      headers: { apikey: CLAVE, Authorization: "Bearer " + token },
+    }).catch(() => {});
+  }
+}
+
+async function cargarDatos() {
+  const [est, asi, lic, eve] = await Promise.all([
+    todo("estudiantes", "select=*&order=nombre.asc,id.asc"),
+    todo("asistencia", "select=id,estudiante_id,fecha,hora,estado,origen&order=fecha.asc,id.asc"),
+    todo("licencias", "select=*&order=fecha_inicio.desc,id.desc"),
+    http("GET", "/rest/v1/eventos?select=*&order=id.desc&limit=500"),
+  ]);
+
+  return {
+    estudiantes: est.map(e => ({
+      id: e.id, nombre: e.nombre, curso: e.curso,
+      activo: e.activo ? 1 : 0, capturas: e.capturas, desde: e.registrado || "",
+    })),
+    asistencia: asi.map(a => ({
+      id: a.id, estudiante_id: a.estudiante_id, fecha: a.fecha,
+      hora: horaCompleta(a.hora), estado: a.estado, origen: a.origen,
+    })),
+    licencias: lic.map(l => ({
+      id: l.id, estudiante_id: l.estudiante_id,
+      inicio: l.fecha_inicio, fin: l.fecha_fin, motivo: l.motivo || "",
+    })),
+    eventos: eve.map(v => ({
+      fecha: v.fecha, hora: horaCompleta(v.hora), tipo: v.tipo,
+      estudiante_id: v.estudiante_id, detalle: v.detalle || "",
+    })),
+  };
+}
+
+/* =========================================================
+   ESTADO EN MEMORIA  (nunca se guarda en el navegador)
+   ========================================================= */
+let D = null;
+let estById = new Map();
+let registros = new Map();
+let dias = [];
+let cursos = [];
+let tiempoInactivo = null;
+let intervaloActualizar = null;
+let cargando = false;
+
+function preparar(datos) {
+  D = datos;
+  estById = new Map(D.estudiantes.map(e => [e.id, e]));
+  registros = new Map(D.asistencia.map(a => [a.estudiante_id + "|" + a.fecha, a]));
+  dias = [...new Set(D.asistencia.map(a => a.fecha))].sort();
+  cursos = [...new Set(D.estudiantes.map(e => e.curso))].sort();
+}
+
+/* Estado de un estudiante en una fecha (null = no cuenta ese dia) */
+function estadoDe(e, fecha) {
+  const r = registros.get(e.id + "|" + fecha);
+  if (r) return { estado: r.estado, hora: r.hora };
+  if (!e.activo) return null;
+  if (e.desde && fecha < e.desde) return null;
+  const lic = D.licencias.find(l =>
+    l.estudiante_id === e.id && l.inicio <= fecha && fecha <= l.fin);
+  if (lic) return { estado: "LICENCIA", hora: "", motivo: lic.motivo };
+  return { estado: "AUSENTE", hora: "" };
+}
+
+function filasDelDia(fecha) {
+  const filas = [];
+  for (const e of D.estudiantes) {
+    const s = estadoDe(e, fecha);
+    if (s) filas.push({ fecha, est: e, ...s });
+  }
+  return filas;
+}
+
+function contar(filas) {
+  const c = { PRESENTE: 0, TARDANZA: 0, AUSENTE: 0, LICENCIA: 0 };
+  for (const f of filas) c[f.estado] = (c[f.estado] || 0) + 1;
+  return c;
+}
+
+function tabla(columnas, filas, vacio) {
+  if (!filas.length) return `<div class="bloque vacio">${esc(vacio)}</div>`;
+  const cab = columnas.map(c => `<th class="${c.num ? "num" : ""}">${esc(c.t)}</th>`).join("");
+  const cuerpo = filas.map(f => "<tr>" + f.map((celda, i) =>
+    `<td class="${columnas[i].num ? "num" : ""} ${columnas[i].mono ? "mono" : ""}">${celda}</td>`
+  ).join("") + "</tr>").join("");
+  return `<div class="scroll"><table><thead><tr>${cab}</tr></thead><tbody>${cuerpo}</tbody></table></div>`;
+}
+
+function llenarSelectCursos(sel, conTodos) {
+  const previo = sel.value;
+  sel.innerHTML = (conTodos ? '<option value="">Todos</option>' : "") +
+    cursos.map(c => `<option>${esc(c)}</option>`).join("");
+  if ([...sel.options].some(o => o.value === previo)) sel.value = previo;
+}
+
+/* =========================================================
+   RESUMEN
+   ========================================================= */
+function pintarResumen() {
+  const fecha = $("#selDia").value;
+  if (!fecha) {
+    $("#cifras").innerHTML = "";
+    $("#porCurso").innerHTML = `<div class="bloque vacio">Todavía no hay asistencias registradas.</div>`;
+    $("#grafico").innerHTML = `<div class="vacio">Sin datos.</div>`;
+    return;
+  }
+
+  const filas = filasDelDia(fecha);
+  const c = contar(filas);
+  const base = c.PRESENTE + c.TARDANZA + c.AUSENTE;
+  const pct = base ? Math.round((c.PRESENTE + c.TARDANZA) * 100 / base) : 0;
+
+  $("#cifras").innerHTML = `
+    <div class="cifra ok"><b>${c.PRESENTE}</b><small>Presentes</small></div>
+    <div class="cifra warn"><b>${c.TARDANZA}</b><small>Tardanzas (después de ${esc(HORA_LIMITE.slice(0, 5))})</small></div>
+    <div class="cifra bad"><b>${c.AUSENTE}</b><small>Ausentes</small></div>
+    <div class="cifra info"><b>${c.LICENCIA}</b><small>Con licencia</small></div>
+    <div class="cifra"><b>${pct}%</b><small>Asistencia (sin contar licencias)</small></div>`;
+
+  const filasCurso = cursos.map(curso => {
+    const cc = contar(filas.filter(f => f.est.curso === curso));
+    const total = cc.PRESENTE + cc.TARDANZA + cc.AUSENTE + cc.LICENCIA;
+    return [esc(curso), total, cc.PRESENTE, cc.TARDANZA, cc.AUSENTE, cc.LICENCIA];
+  });
+  $("#porCurso").innerHTML = tabla(
+    [{ t: "Curso" }, { t: "Estudiantes", num: 1 }, { t: "Presentes", num: 1 },
+     { t: "Tardanzas", num: 1 }, { t: "Ausentes", num: 1 }, { t: "Licencias", num: 1 }],
+    filasCurso, "Sin cursos.");
+
+  pintarGrafico();
+}
+
+function pintarGrafico() {
+  const ult = dias.slice(-14);
+  if (!ult.length) { $("#grafico").innerHTML = `<div class="vacio">Sin datos.</div>`; return; }
+
+  const datos = ult.map(f => ({ f, c: contar(filasDelDia(f)) }));
+  const maximo = Math.max(1, ...datos.map(d => d.c.PRESENTE + d.c.TARDANZA + d.c.AUSENTE + d.c.LICENCIA));
+
+  const W = 720, H = 240, ml = 34, mr = 8, mt = 10, mb = 34;
+  const iw = W - ml - mr, ih = H - mt - mb;
+  const paso = iw / datos.length;
+  const ancho = Math.min(36, paso * 0.62);
+  const serie = [["PRESENTE", "--c-ok"], ["TARDANZA", "--c-warn"], ["LICENCIA", "--c-info"], ["AUSENTE", "--c-bad"]];
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Asistencia de los últimos días con clase">`;
+
+  for (const frac of [0, 0.5, 1]) {
+    const y = mt + ih - ih * frac;
+    svg += `<line x1="${ml}" x2="${W - mr}" y1="${y}" y2="${y}" stroke="var(--line)"/>`;
+    svg += `<text x="${ml - 6}" y="${y + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${Math.round(maximo * frac)}</text>`;
+  }
+
+  datos.forEach((d, i) => {
+    const x = ml + paso * i + (paso - ancho) / 2;
+    let y = mt + ih;
+    const titulo = `${fmtFechaLarga(d.f)}: ${d.c.PRESENTE} presentes, ${d.c.TARDANZA} tardanzas, ${d.c.LICENCIA} licencias, ${d.c.AUSENTE} ausentes`;
+    svg += `<g><title>${esc(titulo)}</title>`;
+    for (const [clave, color] of serie) {
+      const h = ih * d.c[clave] / maximo;
+      if (h > 0) {
+        y -= h;
+        svg += `<rect x="${x}" y="${y}" width="${ancho}" height="${Math.max(0, h - 1)}" rx="2" fill="var(${color})"/>`;
+      }
+    }
+    svg += `<rect x="${x}" y="${mt}" width="${ancho}" height="${ih}" fill="transparent"/></g>`;
+    const [, m, dd] = d.f.split("-");
+    svg += `<text x="${x + ancho / 2}" y="${H - 14}" text-anchor="middle" font-size="11" fill="var(--muted)">${dd}/${m}</text>`;
+  });
+  svg += `</svg>`;
+
+  const leyenda = `<div class="leyenda">
+    <span><i style="background:var(--c-ok)"></i>Presentes</span>
+    <span><i style="background:var(--c-warn)"></i>Tardanzas</span>
+    <span><i style="background:var(--c-info)"></i>Licencias</span>
+    <span><i style="background:var(--c-bad)"></i>Ausentes</span></div>`;
+
+  $("#grafico").innerHTML = leyenda + svg;
+}
+
+/* =========================================================
+   ASISTENCIA (historial con filtros + edicion)
+   ========================================================= */
+let ultimasFilasFiltradas = [];
+
+function pintarAsistencia() {
+  const desde = $("#fDesde").value, hasta = $("#fHasta").value;
+  const curso = $("#fCurso").value, estado = $("#fEstado").value;
+  const q = $("#fBuscar").value.trim().toLowerCase();
+
+  let filas = [];
+  for (const f of dias) {
+    if (desde && f < desde) continue;
+    if (hasta && f > hasta) continue;
+    filas.push(...filasDelDia(f));
+  }
+  if (curso) filas = filas.filter(r => r.est.curso === curso);
+  if (estado) filas = filas.filter(r => r.estado === estado);
+  if (q) filas = filas.filter(r => r.est.nombre.toLowerCase().includes(q));
+
+  filas.sort((a, b) =>
+    b.fecha.localeCompare(a.fecha) ||
+    (a.hora || "99").localeCompare(b.hora || "99") ||
+    a.est.nombre.localeCompare(b.est.nombre));
+
+  ultimasFilasFiltradas = filas;
+
+  const LIMITE = 1000;
+  const visibles = filas.slice(0, LIMITE);
+
+  const html = tabla(
+    [{ t: "Fecha" }, { t: "Hora", mono: 1 }, { t: "Estudiante" }, { t: "Curso" }, { t: "Estado" }, { t: "" }],
+    visibles.map(r => {
+      const hayRegistro = r.estado === "PRESENTE" || r.estado === "TARDANZA";
+      const boton = `<button class="btn sec peq" type="button" data-accion="asistencia" ` +
+        `data-est="${r.est.id}" data-fecha="${esc(r.fecha)}">` +
+        (hayRegistro ? "Editar" : "Marcar presente") + `</button>`;
+      return [esc(fmtFechaLarga(r.fecha)), esc(r.hora || "—"), esc(r.est.nombre),
+              esc(r.est.curso), badge(r.estado), boton];
+    }),
+    "No hay registros con esos filtros."
+  );
+
+  const resumen = `<p class="pie" style="margin:0 0 10px">${filas.length} registros` +
+    (filas.length > LIMITE ? ` (se muestran los primeros ${LIMITE}; usa los filtros o descarga el CSV completo)` : "") + `</p>`;
+
+  $("#resultadoAsistencia").innerHTML = resumen + html;
+}
+
+function descargarCsv() {
+  const celda = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const lineas = [["Fecha", "Hora", "Estudiante", "Curso", "Estado"].map(celda).join(",")];
+  for (const r of ultimasFilasFiltradas) {
+    lineas.push([r.fecha, r.hora, r.est.nombre, r.est.curso, r.estado].map(celda).join(","));
+  }
+  const blob = new Blob(["﻿" + lineas.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  const d = $("#fDesde").value || "inicio", h = $("#fHasta").value || "hoy";
+  a.href = URL.createObjectURL(blob);
+  a.download = `asistencia_${d}_a_${h}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/* ---------- dialogo: editar o marcar asistencia ---------- */
+let dlgActual = null;   // { est, fecha, registro }
+
+function estadoPorHora(hora) {
+  return horaCompleta(hora) > HORA_LIMITE ? "TARDANZA" : "PRESENTE";
+}
+
+function abrirDialogo(estId, fecha) {
+  const est = estById.get(estId);
+  if (!est) return;
+  const registro = registros.get(estId + "|" + fecha) || null;
+  dlgActual = { est, fecha, registro };
+
+  $("#dlgTitulo").textContent = registro ? "Editar asistencia" : "Marcar asistencia manual";
+  $("#dlgDetalle").textContent = `${est.nombre} (${est.curso}) · ${fmtFechaLarga(fecha)}`;
+  $("#dHora").value = registro ? registro.hora : "";
+  $("#dEstado").value = registro ? registro.estado : "PRESENTE";
+  $("#dEliminar").hidden = !registro;
+  $("#dError").textContent = "";
+  $("#dlgAsistencia").showModal();
+  $("#dHora").focus();
+}
+
+async function guardarAsistencia(ev) {
+  ev.preventDefault();
+  if (!dlgActual) return;
+
+  const hora = horaCompleta($("#dHora").value);
+  const estado = $("#dEstado").value;
+  const { est, fecha, registro } = dlgActual;
+  const boton = $("#dGuardar");
+
+  boton.disabled = true;
+  $("#dError").textContent = "";
+
+  try {
+    if (registro) {
+      const r = await http("PATCH", `/rest/v1/asistencia?id=eq.${registro.id}`,
+        { hora, estado, origen: "admin" }, { Prefer: "return=representation" });
+      if (!r || !r.length) throw new ErrorApi(-1, "No se pudo modificar (sin permiso o el registro ya no existe).");
+    } else {
+      await http("POST", "/rest/v1/asistencia",
+        { estudiante_id: est.id, fecha, hora, estado, origen: "admin" },
+        { Prefer: "return=minimal" });
+    }
+    $("#dlgAsistencia").close();
+    toast("Asistencia guardada.");
+    await refrescarDatos(true);
+  } catch (e) {
+    $("#dError").textContent = e.codigo === 409
+      ? "Ese estudiante ya tiene asistencia ese día. Actualiza la página."
+      : textoError(e);
+    manejarSesion(e);
+  } finally {
+    boton.disabled = false;
+  }
+}
+
+async function eliminarAsistencia() {
+  if (!dlgActual || !dlgActual.registro) return;
+  const { est, fecha, registro } = dlgActual;
+  if (!confirm(`¿Eliminar la asistencia de ${est.nombre} del ${fmtFecha(fecha)}?`)) return;
+
+  try {
+    const r = await http("DELETE", `/rest/v1/asistencia?id=eq.${registro.id}`,
+      undefined, { Prefer: "return=representation" });
+    if (!r || !r.length) throw new ErrorApi(-1, "No se pudo eliminar (sin permiso o ya no existe).");
+    $("#dlgAsistencia").close();
+    toast("Registro eliminado.");
+    await refrescarDatos(true);
+  } catch (e) {
+    $("#dError").textContent = textoError(e);
+    manejarSesion(e);
+  }
+}
+
+/* =========================================================
+   ESTUDIANTES
+   ========================================================= */
+function pintarEstudiantes() {
+  const curso = $("#eCurso").value;
+  const q = $("#eBuscar").value.trim().toLowerCase();
+
+  const lista = D.estudiantes.filter(e =>
+    (!curso || e.curso === curso) && (!q || e.nombre.toLowerCase().includes(q)));
+
+  const filas = lista.map(e => {
+    const c = { PRESENTE: 0, TARDANZA: 0, AUSENTE: 0, LICENCIA: 0 };
+    for (const f of dias) {
+      const s = estadoDe(e, f);
+      if (s) c[s.estado]++;
+    }
+    const base = c.PRESENTE + c.TARDANZA + c.AUSENTE;
+    const pct = base ? Math.round((c.PRESENTE + c.TARDANZA) * 100 / base) + "%" : "—";
+    return [
+      esc(e.nombre), esc(e.curso),
+      e.activo ? `<span class="badge ok">ACTIVO</span>` : `<span class="badge neutro">INACTIVO</span>`,
+      e.capturas, c.PRESENTE, c.TARDANZA, c.AUSENTE, c.LICENCIA, pct,
+    ];
+  });
+
+  $("#resultadoEstudiantes").innerHTML = tabla(
+    [{ t: "Nombre" }, { t: "Curso" }, { t: "Estado" }, { t: "Capturas", num: 1 },
+     { t: "Presentes", num: 1 }, { t: "Tardanzas", num: 1 }, { t: "Ausencias", num: 1 },
+     { t: "Licencias", num: 1 }, { t: "Asistencia", num: 1 }],
+    filas, "No hay estudiantes con ese filtro.");
+}
+
+/* =========================================================
+   LICENCIAS
+   ========================================================= */
+function llenarEstudiantesLicencia() {
+  const sel = $("#lEst");
+  const previo = sel.value;
+  sel.innerHTML = D.estudiantes.filter(e => e.activo)
+    .map(e => `<option value="${e.id}">${esc(e.nombre)} (${esc(e.curso)})</option>`).join("");
+  if ([...sel.options].some(o => o.value === previo)) sel.value = previo;
+}
+
+function pintarLicencias() {
+  const hoy = hoyISO();
+  const filas = [...D.licencias]
+    .sort((a, b) => b.inicio.localeCompare(a.inicio))
+    .map(l => {
+      const e = estById.get(l.estudiante_id);
+      let est = ["Finalizada", "neutro"];
+      if (l.inicio <= hoy && hoy <= l.fin) est = ["Vigente", "info"];
+      else if (l.inicio > hoy) est = ["Próxima", "warn"];
+      return [
+        esc(e ? e.nombre : "(estudiante eliminado)"), esc(e ? e.curso : ""),
+        esc(fmtFecha(l.inicio)), esc(fmtFecha(l.fin)),
+        esc(l.motivo || "—"),
+        `<span class="badge ${est[1]}">${est[0]}</span>`,
+        `<button class="btn peligro peq" type="button" data-accion="borrar-licencia" data-id="${l.id}">Eliminar</button>`,
+      ];
+    });
+
+  $("#resultadoLicencias").innerHTML = tabla(
+    [{ t: "Estudiante" }, { t: "Curso" }, { t: "Desde" }, { t: "Hasta" },
+     { t: "Motivo" }, { t: "Estado" }, { t: "" }],
+    filas, "No hay licencias registradas.");
+}
+
+async function crearLicencia(ev) {
+  ev.preventDefault();
+  const error = $("#lError");
+  error.textContent = "";
+
+  const desde = $("#lDesde").value, hasta = $("#lHasta").value;
+  if (hasta < desde) { error.textContent = "La fecha final no puede ser anterior a la inicial."; return; }
+
+  const boton = $("#btnLicencia");
+  boton.disabled = true;
+  try {
+    await http("POST", "/rest/v1/licencias", {
+      estudiante_id: Number($("#lEst").value),
+      fecha_inicio: desde, fecha_fin: hasta,
+      motivo: $("#lMotivo").value.trim() || null,
+    }, { Prefer: "return=minimal" });
+    $("#formLicencia").reset();
+    llenarEstudiantesLicencia();
+    toast("Licencia registrada.");
+    await refrescarDatos(true);
+  } catch (e) {
+    error.textContent = textoError(e);
+    manejarSesion(e);
+  } finally {
+    boton.disabled = false;
+  }
+}
+
+async function borrarLicencia(id) {
+  const lic = D.licencias.find(l => l.id === id);
+  const est = lic && estById.get(lic.estudiante_id);
+  if (!confirm(`¿Eliminar la licencia de ${est ? est.nombre : "este estudiante"}?`)) return;
+
+  try {
+    const r = await http("DELETE", `/rest/v1/licencias?id=eq.${id}`,
+      undefined, { Prefer: "return=representation" });
+    if (!r || !r.length) throw new ErrorApi(-1, "No se pudo eliminar (sin permiso o ya no existe).");
+    toast("Licencia eliminada.");
+    await refrescarDatos(true);
+  } catch (e) {
+    toast(textoError(e), false);
+    manejarSesion(e);
+  }
+}
+
+/* =========================================================
+   ALERTAS
+   ========================================================= */
+function pintarEventos() {
+  const filas = D.eventos.map(ev => {
+    const e = ev.estudiante_id != null ? estById.get(ev.estudiante_id) : null;
+    return [
+      esc(fmtFecha(ev.fecha)), esc(ev.hora),
+      esc(NOMBRE_EVENTO[ev.tipo] || ev.tipo),
+      esc(e ? `${e.nombre} (${e.curso})` : "—"),
+      esc(ev.detalle || ""),
+    ];
+  });
+  $("#resultadoEventos").innerHTML = tabla(
+    [{ t: "Fecha" }, { t: "Hora", mono: 1 }, { t: "Tipo" }, { t: "Estudiante" }, { t: "Detalle" }],
+    filas, "No hay alertas registradas.");
+}
+
+/* =========================================================
+   NAVEGACION, ACTUALIZACION Y SESION
+   ========================================================= */
+function irA(nombre) {
+  document.querySelectorAll("nav.tabs button").forEach(b =>
+    b.setAttribute("aria-selected", String(b.dataset.tab === nombre)));
+  document.querySelectorAll("main > section").forEach(s =>
+    s.hidden = s.id !== "tab-" + nombre);
+}
+
+function repintar() {
+  const previo = $("#selDia").value;
+  $("#selDia").innerHTML = [...dias].reverse()
+    .map(f => `<option value="${f}">${esc(fmtFechaLarga(f))}</option>`).join("");
+  if (previo && dias.includes(previo)) $("#selDia").value = previo;
+
+  llenarSelectCursos($("#fCurso"), true);
+  llenarSelectCursos($("#eCurso"), true);
+  llenarEstudiantesLicencia();
+
+  pintarResumen();
+  pintarAsistencia();
+  pintarEstudiantes();
+  pintarLicencias();
+  pintarEventos();
+
+  const ahora = new Date();
+  $("#horaActualizado").textContent =
+    `Actualizado ${p2(ahora.getHours())}:${p2(ahora.getMinutes())}:${p2(ahora.getSeconds())}`;
+  $("#pie").textContent =
+    "Los datos se leen en vivo de la nube (se actualizan solos cada 30 segundos). " +
+    "Las ausencias se cuentan solo en días con registros y desde que cada " +
+    "estudiante fue registrado.";
+}
+
+function manejarSesion(e) {
+  if (e instanceof ErrorApi && e.codigo === 401) cerrarSesion("Tu sesión venció. Vuelve a entrar.");
+}
+
+async function refrescarDatos(silencioso) {
+  if (cargando || !D) return;
+  cargando = true;
+  const boton = $("#btnActualizar");
+  boton.disabled = true;
+  try {
+    preparar(await cargarDatos());
+    repintar();
+  } catch (e) {
+    if (!silencioso) toast(textoError(e), false);
+    manejarSesion(e);
+  } finally {
+    boton.disabled = false;
+    cargando = false;
+  }
+}
+
+function reiniciarInactividad() {
+  clearTimeout(tiempoInactivo);
+  tiempoInactivo = setTimeout(
+    () => cerrarSesion("Sesión cerrada por inactividad."), 15 * 60 * 1000);
+}
+
+function abrirApp(admin, correo) {
+  const ultimo = dias[dias.length - 1] || "";
+
+  $("#nombreAdmin").textContent = admin.nombre || correo;
+  $("#fDesde").value = ultimo;
+  $("#fHasta").value = ultimo;
+  $("#fEstado").value = "";
+  $("#fBuscar").value = "";
+  $("#eBuscar").value = "";
+  $("#lDesde").value = hoyISO();
+  $("#lHasta").value = hoyISO();
+
+  repintar();
+  irA("resumen");
+
+  $("#vistaLogin").hidden = true;
+  $("#vistaApp").hidden = false;
+  window.scrollTo(0, 0);
+  reiniciarInactividad();
+
+  clearInterval(intervaloActualizar);
+  intervaloActualizar = setInterval(() => {
+    if (!document.hidden && !$("#dlgAsistencia").open) refrescarDatos(true);
+  }, 30000);
+}
+
+function cerrarSesion(mensaje) {
+  clearTimeout(tiempoInactivo);
+  clearInterval(intervaloActualizar);
+  cerrarSesionNube();
+  D = null; estById = new Map(); registros = new Map(); dias = []; cursos = [];
+  ultimasFilasFiltradas = [];
+  if ($("#dlgAsistencia").open) $("#dlgAsistencia").close();
+  $("#clave").value = "";
+  $("#errorLogin").textContent = mensaje || "";
+  $("#vistaApp").hidden = true;
+  $("#vistaLogin").hidden = false;
+  $("#usuario").focus();
+}
+
+/* =========================================================
+   EVENTOS DE LA INTERFAZ
+   ========================================================= */
+$("#formLogin").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const error = $("#errorLogin");
+  const boton = $("#btnEntrar");
+  error.textContent = "";
+
+  if (!URL_API || !CLAVE) {
+    error.textContent = "Falta configurar config.js (URL y clave de Supabase).";
+    return;
+  }
+
+  const correo = $("#usuario").value;
+  boton.disabled = true;
+  boton.textContent = "Verificando…";
+
+  try {
+    const admin = await iniciarSesionNube(correo, $("#clave").value);
+    preparar(await cargarDatos());
+    abrirApp(admin, correo.trim());
+  } catch (e) {
+    cerrarSesionNube();
+    error.textContent = textoError(e);
+    $("#clave").select();
+  } finally {
+    boton.disabled = false;
+    boton.textContent = "Entrar";
+  }
+});
+
+document.querySelectorAll("nav.tabs button").forEach(b =>
+  b.addEventListener("click", () => irA(b.dataset.tab)));
+
+$("#btnSalir").addEventListener("click", () => cerrarSesion());
+$("#btnActualizar").addEventListener("click", () => refrescarDatos(false));
+$("#selDia").addEventListener("change", pintarResumen);
+
+["fDesde", "fHasta", "fCurso", "fEstado"].forEach(id =>
+  $("#" + id).addEventListener("change", pintarAsistencia));
+$("#fBuscar").addEventListener("input", pintarAsistencia);
+$("#btnTodo").addEventListener("click", () => {
+  $("#fDesde").value = ""; $("#fHasta").value = ""; pintarAsistencia();
+});
+$("#btnCsv").addEventListener("click", descargarCsv);
+
+$("#eCurso").addEventListener("change", pintarEstudiantes);
+$("#eBuscar").addEventListener("input", pintarEstudiantes);
+
+$("#formLicencia").addEventListener("submit", crearLicencia);
+$("#formAsistencia").addEventListener("submit", guardarAsistencia);
+$("#dCancelar").addEventListener("click", () => $("#dlgAsistencia").close());
+$("#dEliminar").addEventListener("click", eliminarAsistencia);
+$("#dHora").addEventListener("input", () => {
+  if ($("#dHora").value) $("#dEstado").value = estadoPorHora($("#dHora").value);
+});
+
+document.addEventListener("click", ev => {
+  const b = ev.target.closest("[data-accion]");
+  if (!b || !D) return;
+  if (b.dataset.accion === "asistencia") abrirDialogo(Number(b.dataset.est), b.dataset.fecha);
+  if (b.dataset.accion === "borrar-licencia") borrarLicencia(Number(b.dataset.id));
+});
+
+["click", "keydown", "touchstart"].forEach(t =>
+  document.addEventListener(t, () => { if (D) reiniciarInactividad(); }, { passive: true }));
+</script>
+</body>
+</html>
